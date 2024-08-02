@@ -1,7 +1,6 @@
 class InputSourceSelector < Formula
-  desc "Input Source Selector for macOS"
+  desc "A utility program to manipulate Input Sources on Mac OS X. This program is a thin wrapper for Text Input Sources Services API."
   homepage "https://github.com/ershov/InputSourceSelector"
-  # NOTE:
   url "https://github.com/ershov/InputSourceSelector/archive/99e1579a88be115d80a41c80afb197d8c9be29d4.zip"
   sha256 "65bb9f16eaffcdf1da0e93d2c076778bdba0b6c33c9e282807dbd20e3dcda9df"
   license "MIT"
