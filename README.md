@@ -10,3 +10,8 @@ You only need to add this repo to your brew installation via the
 ## Test and CI
 
 At the moment nothing :D
+
+## TODOs
+
+- [ ] CI and tests?
+- [ ] Something to update versions?
