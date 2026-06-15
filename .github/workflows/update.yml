@@ -1,0 +1,56 @@
+name: Update formulae
+
+# Checks upstream GitHub releases and opens a pull request when a formula is
+# out of date. Runs on a weekly schedule and can be triggered manually.
+#
+# Uses the same scripts/update.py as the local `just update`, so CI and local
+# runs behave identically.
+#
+# Note: for the pull request step to work, "Allow GitHub Actions to create and
+# approve pull requests" must be enabled under Settings > Actions > General.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays at 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: "Space-separated formula names to update (empty = all)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update formulae
+        run: python3 scripts/update.py ${{ github.event.inputs.packages }}
+
+      - name: Open pull request if anything changed
+        run: |
+          if git diff --quiet; then
+            echo "All formulae are up to date."
+            exit 0
+          fi
+
+          branch="chore/update-formulae-${{ github.run_id }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git commit -am "chore: update formulae to latest upstream releases"
+          git push -u origin "$branch"
+          gh pr create \
+            --base main \
+            --head "$branch" \
+            --title "chore: update formulae to latest upstream releases" \
+            --body "Automated update created by the \`Update formulae\` workflow.
+
+          Review the version and \`sha256\` changes before merging."
