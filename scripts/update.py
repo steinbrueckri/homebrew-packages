@@ -44,22 +44,75 @@ GH_RELEASE_RE = re.compile(
 )
 
 
-def gh_latest_release(owner, repo):
-    """Return (tag, {asset_name: sha256_or_None}) for the latest release."""
+def tag_prefix(tag):
+    """Return the non-numeric prefix of a tag, e.g. 'v' for 'v0.7.2' or '' for '1.2'."""
+    match = re.match(r"^(.*?)\d", tag)
+    return match.group(1) if match else ""
+
+
+def parse_release_version(tag, prefix):
+    """Return a numeric version tuple if `tag` is `<prefix><semver>`, else None.
+
+    Used to ignore releases from a different stream in the same repo, e.g. a
+    `ringo-flow-v0.10.0` tag must not match a formula tracking `v0.7.2`.
+    """
+    if not tag.startswith(prefix):
+        return None
+    match = re.match(r"^(\d+(?:\.\d+)*)", tag[len(prefix):])
+    if not match:
+        return None
+    return tuple(int(part) for part in match.group(1).split("."))
+
+
+def gh_latest_release(owner, repo, current_tag):
+    """Return (tag, {asset_name: sha256_or_None}) for the highest release.
+
+    Only releases whose tag shares `current_tag`'s prefix and parses as a
+    version are considered, so repos that publish several release streams
+    (different tag prefixes) resolve to the right one. Picks the highest
+    version rather than the most recent by date, which is the correct
+    semantics for a package tap (a late hotfix on an old line never wins).
+    """
+    prefix = tag_prefix(current_tag)
     result = subprocess.run(
-        ["gh", "release", "view", "--repo", f"{owner}/{repo}",
-         "--json", "tagName,assets"],
+        ["gh", "release", "list", "--repo", f"{owner}/{repo}",
+         "--json", "tagName,isDraft,isPrerelease", "--limit", "100"],
         capture_output=True, text=True,
     )
     if result.returncode != 0:
         sys.exit(f"gh failed for {owner}/{repo}: {result.stderr.strip()}")
-    data = json.loads(result.stdout)
+
+    candidates = []
+    for release in json.loads(result.stdout):
+        if release["isDraft"] or release["isPrerelease"]:
+            continue
+        version = parse_release_version(release["tagName"], prefix)
+        if version is not None:
+            candidates.append((version, release["tagName"]))
+    if not candidates:
+        sys.exit(f"{owner}/{repo}: no release matching tag prefix '{prefix}'")
+
+    _, tag = max(candidates)
+    return tag, gh_release_assets(owner, repo, tag)
+
+
+def gh_release_assets(owner, repo, tag):
+    """Return {asset_name: sha256_or_None} for a specific release tag."""
+    result = subprocess.run(
+        ["gh", "release", "view", tag, "--repo", f"{owner}/{repo}",
+         "--json", "assets"],
+        capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        sys.exit(f"gh failed for {owner}/{repo}@{tag}: {result.stderr.strip()}")
     assets = {}
-    for asset in data["assets"]:
+    for asset in json.loads(result.stdout)["assets"]:
         digest = asset.get("digest") or ""
-        prefix = "sha256:"
-        assets[asset["name"]] = digest[len(prefix):] if digest.startswith(prefix) else None
-    return data["tagName"], assets
+        sha_prefix = "sha256:"
+        assets[asset["name"]] = (
+            digest[len(sha_prefix):] if digest.startswith(sha_prefix) else None
+        )
+    return assets
 
 
 def sha256_of_url(url):
@@ -104,7 +157,7 @@ def update_formula(path, dry_run):
         return False
 
     owner, repo, current_tag = info
-    new_tag, assets = gh_latest_release(owner, repo)
+    new_tag, assets = gh_latest_release(owner, repo, current_tag)
     if new_tag == current_tag:
         print(f"{name}: up to date ({current_tag})")
         return False

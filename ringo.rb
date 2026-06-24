@@ -7,23 +7,23 @@ class Ringo < Formula
 
   on_macos do
     on_arm do
-      url "https://github.com/davidborzek/ringo/releases/download/v0.9.0/ringo-aarch64-apple-darwin"
-      sha256 "2e952ebb1f9dca4954076a7dffad5d63ecdbb8f3f45122045dd88c87b4a7655a"
+      url "https://github.com/davidborzek/ringo/releases/download/v0.10.0/ringo-aarch64-apple-darwin"
+      sha256 "98c487dfa6e794bf9558bc025a5fca7daf4f7e9f63f409f5b34a2b449db0f2cb"
     end
     on_intel do
-      url "https://github.com/davidborzek/ringo/releases/download/v0.9.0/ringo-x86_64-apple-darwin"
-      sha256 "d044a110a6dbe3c1229590feb8737311a03cc4dac4f7023092970a6b78ee2acc"
+      url "https://github.com/davidborzek/ringo/releases/download/v0.10.0/ringo-x86_64-apple-darwin"
+      sha256 "edf304e245e1fbc7fc85c4d911a0364ef887012862ba544e0ed8b780d8052cb9"
     end
   end
 
   on_linux do
     on_arm do
-      url "https://github.com/davidborzek/ringo/releases/download/v0.9.0/ringo-aarch64-unknown-linux-gnu"
-      sha256 "e91396f5942d5c4a456e2517a605e7ef59af62f4a9c385d659907b97facb80f5"
+      url "https://github.com/davidborzek/ringo/releases/download/v0.10.0/ringo-aarch64-unknown-linux-gnu"
+      sha256 "6e22042d81336ebf2f654a56c07b3743746c32548f69ef28d84bc6f1d3cd03db"
     end
     on_intel do
-      url "https://github.com/davidborzek/ringo/releases/download/v0.9.0/ringo-x86_64-unknown-linux-gnu"
-      sha256 "72de04ba758d22992ba3128309150578887d4b55bcdc7d641230867a47256f92"
+      url "https://github.com/davidborzek/ringo/releases/download/v0.10.0/ringo-x86_64-unknown-linux-gnu"
+      sha256 "ef3e1f0385f93b145fa28dbf677aeaf6028094fad16004fc96c97d411a78ab31"
     end
   end
 
